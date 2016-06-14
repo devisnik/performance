@@ -408,6 +408,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 .hide-for-print{display:none!important}
 .show-for-print{display:inherit!important}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css">
 <style>
 /* Stylesheet for CodeRay to match GitHub theme | MIT License | http://foundation.zurb.com */
 /*pre.CodeRay {background-color:#f7f7f8;}*/
@@ -566,10 +567,10 @@ table.CodeRay td.code>pre{padding:0}
 </div>
 </div>
 <div class="paragraph">
-<p>Waiting is a part of life. Whether you’re waiting in line at a cinema or for the release of the latest must-have gadget, it’s something you learn to deal with. In the case of builds, waiting may block you from doing something more productive. Or it may throw a spanner in your development cycle, severely impacting productivity. And since you may be repeatedly running the build many times a day, even small periods of waiting can add up to significant disruption.</p>
+<p>Waiting is a part of life. Whether you’re waiting in line at a cinema or for the release of the latest must-have gadget, it’s something you learn to deal with. The same is often the case for builds and the waiting usually blocks you from doing something more productive. And the longer the build takes to complete, the more chance you&#8217;ll be distracted by something else in the meantime. On top of that, since you may be repeatedly running the build many times a day, even small periods of waiting can add up to significant disruption.</p>
 </div>
 <div class="paragraph">
-<p>All this means that it’s worth investing some time and effort into ensuring that your build runs as fast as possible. This guide offers several avenues you can explore to make a build run faster, along with plenty of detail on what sorts of things can adversely affect the performance of a build and why. But first, let’s start with some quick wins.</p>
+<p>All this means that it’s worth investing some time and effort into ensuring that your build runs as fast as possible. This guide offers several avenues you can explore to make a build run faster, along with plenty of detail on what sorts of things can adversely affect the performance of a build and why. Let’s start with some quick wins.</p>
 </div>
 </div>
 </div>
@@ -577,15 +578,15 @@ table.CodeRay td.code>pre{padding:0}
 <h2 id="_easy_improvements">1. Easy improvements</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A guide on performance tuning would normally start with profiling and something about premature optimisation being the root of all evil. We will come to that, but there are some things you can do that will impact all your builds for the better.</p>
+<p>A guide on performance tuning would normally start with profiling and something about premature optimisation being the root of all evil, etc., etc. Profiling is definitely important and we discuss it later in the guide, but there are some things you can do that will impact all your builds for the better at the flick of a switch - metaphorically speaking.</p>
 </div>
 <div class="sect2">
 <h3 id="_enable_the_daemon">1.1. Enable the daemon</h3>
 <div class="paragraph">
-<p>Until the Gradle daemon is enabled by default, which will happen with Gradle 3.0, you will see big improvements in build speed simply by enabling it for all builds. You can learn how to do that <a href="https://docs.gradle.org/current/userguide/gradle_daemon.html">in the user guide</a>. The daemon will result in significantly faster startup, configuration, and overall build execution.</p>
+<p>Until the Gradle daemon is enabled by default, which will happen with Gradle 3.0, you will see big improvements in build speed simply by enabling it for all builds. You can learn how to do that <a href="https://docs.gradle.org/current/userguide/gradle_daemon.html">in the user guide</a>. The daemon significantly improves startup, configuration, and overall build execution times.</p>
 </div>
 <div class="paragraph">
-<p>The usual recommendation is to enable the daemon for developer machines and disable it for continuous integration servers. This is because the daemon is a background process that may require manual intervention from time to time and that’s not always easy when the process is on a separate machine from where you’re sitting. You also need to factor in whether you run many builds with different VM configurations, which will lead to each build having its own daemon.</p>
+<p>The usual recommendation is to enable the daemon for developer machines and disable it for continuous integration servers. This is because the daemon is a background process that may require manual intervention from time to time and that’s not always easy when the process is on a separate machine from where you’re sitting. You also need to factor in whether you run many builds with different VM configurations, which will lead to each build having its own daemon and a potential sea of daemon processes at any one time.</p>
 </div>
 <div class="paragraph">
 <p>Nonetheless, if build times on your CI server hurt developer productivity, you should definitely consider enabling the daemon there. From Gradle 3.0 onwards, the recommendation will be to always use the daemon.</p>
@@ -597,11 +598,28 @@ table.CodeRay td.code>pre{padding:0}
 <p>The Gradle team works regularly on improving the performance of different aspects of Gradle builds. If you’re using an old version of Gradle, you’re missing out on the benefits of that work. Try upgrading to the latest version of Gradle to see what kind of impact it has. Doing so is low risk because very few things break between minor versions of Gradle.</p>
 </div>
 <div class="paragraph">
-<p>Going up a major version may be more work as breaking changes are expected, but it’s often worth the effort.</p>
+<p>Going up a major version will probably involve more work as that&#8217;s when deliberate breaking changes happen. Even so, it’s definitely worth giving it a try, particularly if the release notes for a new version explicitly call out new performance improvements.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_parallel_builds">1.3. Parallel builds</h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Both parallel builds and configure on demand are easy to enable, but should not be used unless you&#8217;re an <strong>expert user</strong>. They can have a really big impact on multi-project build performance, but they are also incubating features - which means they may still have significant bugs - and they require you to avoid certain techniques in your build files to work properly.</p>
+</div>
+<div class="paragraph">
+<p>Some of the things you need to avoid are documented (follow the "decoupled projects" link in this section), but others are not. So if you have long-running, multi-project builds, certainly give them a try, but understand that the builds may fail for unclear reasons. If that happens, simply stop using these options.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Few non-trivial builds consist of just one project, and yet if you want to run tasks across several subprojects, Gradle will process them sequentially. By using the <code>--parallel</code> switch, you can force Gradle to execute independent subprojects - those that have no implicit or explicit project dependencies between one another - in parallel, making the best use of your computer’s resources.</p>
 </div>
@@ -614,6 +632,18 @@ table.CodeRay td.code>pre{padding:0}
 </div>
 <div class="sect2">
 <h3 id="_configure_on_demand">1.4. Configure on demand</h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+See the warning in the above parallel builds section to find out why you need to take care with this feature.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Imagine you have 300 subprojects all managed by a single Gradle build. Even if the configuration time for each project is just 5 seconds, that means every build will take at last 300 x 5 = 25 minutes! That’s why it’s particularly crucial to keep a close eye on configuration times for projects that have a lot of modules.</p>
 </div>
@@ -650,6 +680,12 @@ table.CodeRay td.code>pre{padding:0}
 </div>
 <div class="paragraph">
 <p>The report itself displays a breakdown of the time taken to run the build for a given set of task arguments. Here’s some sample output so you can see the categories Gradle uses:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/gradle-profile-report.png" alt="Sample Gradle profile report">
+</div>
+<div class="title">Figure 1. An example profile report</div>
 </div>
 <div class="paragraph">
 <p>Each of the main categories - <em>Configuration</em>, <em>Dependency Resolution</em>, and <em>Task Execution</em> - may reveal different time sinks that you may want to tackle. We’ll go through those categories in later sections, detailing the types of issue you may encounter for each one. Before then, let’s take a look at some of the items in the summary.</p>
@@ -1021,7 +1057,7 @@ Dynamic versions, such as “2.+”, and snapshot (or changing) versions force G
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-06-06 16:05:52 +02:00
+Last updated 2016-06-14 16:37:47 BST
 </div>
 </div>
 </body>
