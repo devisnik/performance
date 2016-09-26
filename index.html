@@ -813,7 +813,7 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#_favor_dependency_resolution_during_execution">4.2. Favor dependency resolution during execution</a></li>
 <li><a href="#_avoid_unnecessary_and_unused_dependencies">4.3. Avoid unnecessary and unused dependencies</a></li>
 <li><a href="#_minimize_repository_count">4.4. Minimize repository count</a></li>
-<li><a href="#_beware_third_party_dependency_resolution_plugins">4.5. Beware third party dependency resolution plugins</a></li>
+<li><a href="#_be_careful_with_custom_dependency_resolution_logic">4.5. Be careful with custom dependency resolution logic</a></li>
 </ul>
 </li>
 <li><a href="#_task_execution">5. Task execution</a>
@@ -1234,12 +1234,15 @@ Parallel builds have similar requirements to configure on demand with regard to 
 </div>
 </div>
 <div class="sect2">
-<h3 id="_beware_third_party_dependency_resolution_plugins"><a class="anchor" href="#_beware_third_party_dependency_resolution_plugins"></a>4.5. Beware third party dependency resolution plugins</h3>
+<h3 id="_be_careful_with_custom_dependency_resolution_logic"><a class="anchor" href="#_be_careful_with_custom_dependency_resolution_logic"></a>4.5. Be careful with custom dependency resolution logic</h3>
 <div class="paragraph">
-<p>Gradle benefits hugely from the rich collection of third-party plugins that you can apply to your projects. Many are indispensable. Even so, when you are trying to optimize your build as much as possible, you need to look at the plugins that you’re applying.</p>
+<p>Dependency resolution is a hard problem to solve and making it perform well simply adds to the challenge. And yet, Gradle still needs to allow users to model dependency resolution in the way that best suits them. That&#8217;s why it has a powerful API for customizing how the dependency resolution works.</p>
 </div>
 <div class="paragraph">
-<p>Dependency resolution is a hard problem to solve and making it perform well simply adds to the challenge. So it’s no surprise that plugins might adversely affect the time spent during dependency resolution, albeit unintentionally. If you are using such plugins, have a look at the dependency resolution section of the build profile report to see if the times are longer than expected. Then try disabling the plugin and running the build again to see whether the build times change significantly.</p>
+<p>Simple customizations&#8201;&#8212;&#8201;such as forcing specific versions of a dependency or substituting one dependency for another&#8201;&#8212;&#8201;don&#8217;t have a big impact on dependency resolution times. But if custom logic involves downloading and parsing extra POMs, for example, then the impact can be significant.</p>
+</div>
+<div class="paragraph">
+<p>You should use build scans or profile reports to check that any custom dependency resolution logic you have in your build doesn&#8217;t adversely affect dependency resolution times in a big way. And note that this could be custom logic you have written yourself or it could be part of a plugin that you&#8217;re using.</p>
 </div>
 </div>
 </div>
@@ -1595,7 +1598,7 @@ Parallel builds have similar requirements to configure on demand with regard to 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-09-22 09:19:52 BST
+Last updated 2016-09-26 14:47:10 BST
 </div>
 </div>
 </body>
