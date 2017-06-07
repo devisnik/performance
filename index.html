@@ -43,12 +43,13 @@
     <ul class="sectlevel1"> 
      <li><a href="#easy_improvements">1. Easy improvements</a> 
       <ul class="sectlevel2"> 
-       <li><a href="#enable_the_daemon">1.1. Enable the daemon</a></li> 
-       <li><a href="#use_latest_gradle_and_jvm_versions">1.2. Use latest Gradle and JVM versions</a></li> 
+       <li><a href="#use_latest_gradle_and_jvm_versions">1.1. Use latest Gradle and JVM versions</a></li> 
+       <li><a href="#parallel_project_execution">1.2. Parallel project execution</a></li> 
        <li><a href="#configure_on_demand">1.3. Configure on demand</a></li> 
-       <li><a href="#parallel_builds">1.4. Parallel builds</a></li> 
+       <li><a href="#enable_the_daemon_on_old_gradle_versions">1.4. Enable the daemon on old Gradle versions</a></li> 
+       <li><a href="#adjust_the_daemon_s_heap_size">1.5. Adjust the daemon’s heap size</a></li> 
       </ul> </li> 
-     <li><a href="#profile_profile_profile">2. Profile, profile, profile</a> 
+     <li><a href="#high_level_profiling">2. High level profiling</a> 
       <ul class="sectlevel2"> 
        <li><a href="#using_gradle_build_scans">2.1. Using Gradle build scans</a></li> 
        <li><a href="#profile_report">2.2. Profile report</a></li> 
@@ -63,7 +64,7 @@
      <li><a href="#dependency_resolution">4. Dependency resolution</a> 
       <ul class="sectlevel2"> 
        <li><a href="#dynamic_and_snapshot_versions">4.1. Dynamic and snapshot versions</a></li> 
-       <li><a href="#favor_dependency_resolution_during_execution">4.2. Favor dependency resolution during execution</a></li> 
+       <li><a href="#don_t_resolve_dependencies_at_configuration_time">4.2. Don’t resolve dependencies at configuration time</a></li> 
        <li><a href="#avoid_unnecessary_and_unused_dependencies">4.3. Avoid unnecessary and unused dependencies</a></li> 
        <li><a href="#minimize_repository_count">4.4. Minimize repository count</a></li> 
        <li><a href="#be_careful_with_custom_dependency_resolution_logic">4.5. Be careful with custom dependency resolution logic</a></li> 
@@ -74,22 +75,18 @@
        <li><a href="#incremental_build">5.2. Incremental build</a></li> 
        <li><a href="#partial_builds">5.3. Partial builds</a></li> 
       </ul> </li> 
-     <li><a href="#other_performance_tweaks">6. Other performance tweaks</a> 
+     <li><a href="#suggestions_for_java_projects">6. Suggestions for Java projects</a> 
       <ul class="sectlevel2"> 
-       <li><a href="#boost_daemon_s_heap_size">6.1. Boost daemon’s heap size</a></li> 
-       <li><a href="#running_tests_jvm">6.2. Running tests (JVM)</a></li> 
-       <li><a href="#compiling_java">6.3. Compiling Java</a></li> 
-       <li><a href="#compiler_daemon">6.4. Compiler daemon</a></li> 
-       <li><a href="#incremental_compilation">6.5. Incremental compilation</a></li> 
+       <li><a href="#running_tests">6.1. Running tests</a></li> 
+       <li><a href="#compiling_java">6.2. Compiling Java</a></li> 
+       <li><a href="#compiler_daemon">6.3. Compiler daemon</a></li> 
+       <li><a href="#compile_avoidance">6.4. Compile avoidance</a></li> 
+       <li><a href="#the_java_library_plugin">6.5. The java-library plugin</a></li> 
+       <li><a href="#incremental_compilation">6.6. Incremental compilation</a></li> 
       </ul> </li> 
-     <li><a href="#suggestions_for_android_builds">7. Suggestions for Android builds</a> 
-      <ul class="sectlevel2"> 
-       <li><a href="#use_the_latest_android_plugin">7.1. Use the latest Android plugin</a></li> 
-       <li><a href="#invest_in_fast_cpus">7.2. Invest in fast CPUs</a></li> 
-       <li><a href="#optimize_multidex_development_builds">7.3. Optimize multidex development builds</a></li> 
-       <li><a href="#use_discretion_when_adding_build_types_and_flavors">7.4. Use discretion when adding build types and flavors</a></li> 
-      </ul> </li> 
-     <li><a href="#summary">8. Summary</a></li> 
+     <li><a href="#low_level_profiling">7. Low level profiling</a></li> 
+     <li><a href="#suggestions_for_android_builds">8. Suggestions for Android builds</a></li> 
+     <li><a href="#summary">9. Summary</a></li> 
     </ul> 
    </div> 
   </div> 
@@ -97,10 +94,10 @@
    <div id="preamble"> 
     <div class="sectionbody"> 
      <div class="paragraph"> 
-      <p>Waiting is a part of life. Whether you’re waiting in line at a cinema or for the release of the latest must-have gadget, it’s something you learn to deal with. The same is often the case for builds and the waiting usually blocks you from doing something more productive. And the longer the build takes to complete, the more chance you’ll be distracted by something else in the meantime. On top of that, since you may be repeatedly running the build many times a day, even small periods of waiting can add up to significant disruption.</p> 
+      <p>Build performance is critical to your productivity. The longer the build takes to complete, the more likely you’ll be taken out of your development flow. On top of that, since you run the build many times a day, even small periods of waiting can add up to significant disruption. The same is true for CI builds: The faster they are, the faster you can react to new issues and the more capacity you will have to do innovative experiments.</p> 
      </div> 
      <div class="paragraph"> 
-      <p>All this means that it’s worth investing some time and effort into ensuring that your build runs as fast as possible. This guide offers several avenues you can explore to make a build run faster, along with plenty of detail on what sorts of things can adversely affect the performance of a build and why. Let’s start with some quick wins.</p> 
+      <p>All this means that it’s worth investing some time and effort into making your build as fast as possible. This guide offers several avenues you can explore to make a build faster, along with plenty of detail on what sorts of things can degrade the performance of a build and why. Let’s start with some quick wins.</p> 
      </div> 
     </div> 
    </div> 
@@ -108,89 +105,34 @@
     <h2 id="easy_improvements"><a class="anchor" href="#easy_improvements"></a>1. Easy improvements</h2> 
     <div class="sectionbody"> 
      <div class="paragraph"> 
-      <p>A guide on performance tuning would normally start with profiling and something about premature optimisation being the root of all evil, etc., etc. Profiling is definitely important and we discuss it later in the guide, but there are some things you can do that will impact all your builds for the better at the flick of a switch - metaphorically speaking.</p> 
+      <p>A guide on performance tuning would normally start with profiling and something about premature optimisation being the root of all evil. Profiling is definitely important and we discuss it later in the guide, but there are some things you can do that will impact all your builds for the better at the flick of a switch.</p> 
      </div> 
      <div class="sect2"> 
-      <h3 id="enable_the_daemon"><a class="anchor" href="#enable_the_daemon"></a>1.1. Enable the daemon</h3> 
+      <h3 id="use_latest_gradle_and_jvm_versions"><a class="anchor" href="#use_latest_gradle_and_jvm_versions"></a>1.1. Use latest Gradle and JVM versions</h3> 
       <div class="paragraph"> 
-       <p>The Gradle daemon is a mechanism for improving the performance of Gradle. As of Gradle 3.0, the daemon is enabled by default but if you are using an older version, you should definitely enable it. You will see big improvements in build speed by doing so. You can learn how to do that <a href="https://docs.gradle.org/2.14/userguide/gradle_daemon.html">in the 2.14 user guide</a>.</p> 
-      </div> 
-      <div class="admonitionblock caution"> 
-       <table> 
-        <tbody>
-         <tr> 
-          <td class="icon"> <i class="fa icon-caution" title="Caution"></i> </td> 
-          <td class="content"> 
-           <div class="paragraph"> 
-            <p>You should take particular care when using the daemon with a build that calls into third-party Java <code>main()</code> methods, such as those provided with JVM-based compilers. It’s tempting to run Java code from within the Gradle VM in order to avoid the cost of spawning a new process, but if that code holds onto memory after it finishes, then it causes problems for the daemon.</p> 
-           </div> 
-           <div class="paragraph"> 
-            <p>For the sake of daemon stability, you should use the <code>JavaExec</code> task to execute the code in a separate process.</p> 
-           </div> </td> 
-         </tr> 
-        </tbody>
-       </table> 
+       <p>The Gradle team works continuously on improving the performance of different aspects of Gradle builds. If you’re using an old version of Gradle, you’re missing out on the benefits of that work. Always keep up with Gradle version upgrades. Doing so is low risk because the Gradle team ensures backwards compatibility between minor versions of Gradle. Staying up-to-date also makes transitioning to the next major version easier, because you’ll get early deprecation warnings.</p> 
       </div> 
       <div class="paragraph"> 
-       <p>The recommendation for pre-3.0 versions of Gradle is to enable the daemon for developer machines and disable it for continuous integration servers. This is because the daemon is a background process that may require manual intervention from time to time and that’s not always easy when the process is on a separate machine from where you’re sitting. You also need to factor in whether you run many builds with different VM configurations, which will lead to each build having its own daemon and a potential sea of daemon processes at any one time.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>Nonetheless, if build times on your CI server hurt developer productivity, you should definitely consider enabling the daemon there. Alternatively, upgrade to the latest version of Gradle to benefit from improvements in the robustness of the daemon.</p> 
-      </div> 
-     </div> 
-     <div class="sect2"> 
-      <h3 id="use_latest_gradle_and_jvm_versions"><a class="anchor" href="#use_latest_gradle_and_jvm_versions"></a>1.2. Use latest Gradle and JVM versions</h3> 
-      <div class="paragraph"> 
-       <p>The Gradle team works regularly on improving the performance of different aspects of Gradle builds. If you’re using an old version of Gradle, you’re missing out on the benefits of that work. Try upgrading to the latest version of Gradle to see what kind of impact it has. Doing so is low risk because very few things break between minor versions of Gradle.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>Going up a major version is often just as easy and definitely recommended when available. Just be aware that this is when deprecations become failures. So be sure to fix those deprecation warnings!</p> 
+       <p>Going up a major version is often just as easy. Only formerly deprecated APIs and behavior become failures at these boundaries. So be sure to fix those deprecation warnings! If they are caused by a third party plugin, let the author know right away, so you are not blocked when the next major release comes out.</p> 
       </div> 
       <div class="paragraph"> 
        <p>As Gradle runs on the JVM, improvements in the performance of the latter will often benefit Gradle. Hence, you should consider running Gradle with the latest major version of the JVM.</p> 
       </div> 
      </div> 
      <div class="sect2"> 
-      <h3 id="configure_on_demand"><a class="anchor" href="#configure_on_demand"></a>1.3. Configure on demand</h3> 
+      <h3 id="parallel_project_execution"><a class="anchor" href="#parallel_project_execution"></a>1.2. Parallel project execution</h3> 
       <div class="paragraph"> 
-       <p>Imagine you have 300 subprojects all managed by a single Gradle build. Even if the configuration time for each project is just half a second, that means every build will take at last 300 x 0.5s = 2.5 minutes! That’s why it’s particularly crucial to keep a close eye on configuration times for projects that have a lot of modules.</p> 
+       <p>Most builds consist of more than one project and some of those projects are usually independent of one another. Yet Gradle will only run one task at a time by default, regardless of the project structure (this will be improved soon). By using the <code>--parallel</code> switch, you can force Gradle to execute tasks in parallel as long as those tasks are in different projects.</p> 
       </div> 
       <div class="paragraph"> 
-       <p>With that in mind, wouldn’t it be better if Gradle only configured the projects that were actually required to execute the requested task(s)? Of course, and that’s where the <code>--configure-on-demand</code> command line option comes in. It avoids a lot of unnecessary configuration at the cost of working out which projects are required. We wouldn’t recommend using it if you only have a small number of quick-to-configure subprojects, but otherwise you should try it.</p> 
+       <p>You could see big improvements in build times as soon as you enable parallel builds. The extent of those improvements depends on your project structure and how many dependencies you have between them. A build whose execution time is dominated by a single project won’t benefit much at all, for example. Or one that has lots of inter-project dependencies resulting in few tasks that can be executed in parallel. But most multi-project builds should see a worthwhile boost to build times.</p> 
       </div> 
       <div class="admonitionblock note"> 
        <table> 
         <tbody>
          <tr> 
           <td class="icon"> <i class="fa icon-note" title="Note"></i> </td> 
-          <td class="content"> Configure on demand will only work reliably when you have decoupled projects or explicit (rather than implicit) inter-project dependencies. You can learn more about <a href="https://docs.gradle.org/current/userguide/multi_project_builds.html#sec:decoupled_projects">decoupled projects</a> in the User Manual. </td> 
-         </tr> 
-        </tbody>
-       </table> 
-      </div> 
-      <div class="paragraph"> 
-       <p>You can make configure on demand the default for a project by adding the following setting to its <em>gradle.properties</em> file:</p> 
-      </div> 
-      <div class="listingblock"> 
-       <div class="content"> 
-        <pre class="CodeRay highlight"><code data-lang="java">org.gradle.configureondemand=<span class="predefined-constant">true</span></code></pre> 
-       </div> 
-      </div> 
-     </div> 
-     <div class="sect2"> 
-      <h3 id="parallel_builds"><a class="anchor" href="#parallel_builds"></a>1.4. Parallel builds</h3> 
-      <div class="paragraph"> 
-       <p>Few non-trivial builds consist of just one project and when you have a mult-project build, some of those projects are usually independent of one another. Yet Gradle will only ever run one task at a time by default, regardless of the project structure. By using the <code>--parallel</code> switch, you can force Gradle to execute independent subprojects - those that have no implicit or explicit project dependencies between one another - in parallel, allowing it to run multiple tasks at the same time as long as those tasks are in different projects.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>You could see big improvements in build times as soon as you enable parallel builds. The extent of those improvements depends on your project structure and how many explicit dependencies you have between them. A build whose execution time is dominated by a single project won’t benefit much at all, for example. Or one that has lots of inter-project dependencies resulting in few projects that can be executed in parallel. But most multi-project builds should see a worthwhile boost to build times.</p> 
-      </div> 
-      <div class="admonitionblock note"> 
-       <table> 
-        <tbody>
-         <tr> 
-          <td class="icon"> <i class="fa icon-note" title="Note"></i> </td> 
-          <td class="content"> Parallel builds have similar requirements to configure on demand with regard to decoupled projects. In addition, you should read more about them in <a href="https://docs.gradle.org/current/userguide/multi_project_builds.html#sec:parallel_execution">the User Manual</a> before using them extensively. You need to be more careful in your build configuration and execution than normal to use parallel builds reliably. For example, you should currently avoid running the <code>clean</code> task in combination with other tasks in a parallel build - the User Manual explains why in a warning. </td> 
+          <td class="content"> Parallel builds require projects to be decoupled at execution time, i.e. tasks in different projects must not modify shared state. Read more about that topic in <a href="https://docs.gradle.org/current/userguide/multi_project_builds.html#sec:parallel_execution">the User Manual</a> before using <code>--parallel</code> extensively. Also be aware that Gradle versions up until 3.5 can run <code>clean</code> and <code>build</code> tasks in parallel, resulting in failures. This will be fixed in Gradle 4.0. Until then it is best to call <code>clean</code> separately. </td> 
          </tr> 
         </tbody>
        </table> 
@@ -203,6 +145,46 @@
         <pre class="CodeRay highlight"><code data-lang="groovy">org.gradle.parallel=<span class="predefined-constant">true</span></code></pre> 
        </div> 
       </div> 
+     </div> 
+     <div class="sect2"> 
+      <h3 id="configure_on_demand"><a class="anchor" href="#configure_on_demand"></a>1.3. Configure on demand</h3> 
+      <div class="paragraph"> 
+       <p>Imagine you have 300 subprojects all managed by a single Gradle build. Even if the configuration time for each project is just 50ms, that means every build will take at least 15s! That’s why it’s particularly crucial to keep a close eye on configuration times for projects that have a lot of modules.</p> 
+      </div> 
+      <div class="paragraph"> 
+       <p>With that in mind, wouldn’t it be better if Gradle only configured the projects that were actually required to execute the requested task(s)? Of course, and that’s where the <code>--configure-on-demand</code> command line option comes in. It avoids a lot of unnecessary configuration at the cost of working out which projects are required. We wouldn’t recommend using it if you only have a small number of quick-to-configure subprojects, but otherwise you should try it.</p> 
+      </div> 
+      <div class="paragraph"> 
+       <p>Configure on demand will only work reliably when you have decoupled projects. You can learn more about <a href="https://docs.gradle.org/current/userguide/multi_project_builds.html#sec:decoupled_projects">decoupled projects</a> in the User Manual. Most importantly, using <code>subprojects {}</code> or <code>allprojects {}</code> blocks will mostly negate the benefit of configure-on-demand, because those blocks are executed eagerly.</p> 
+      </div> 
+      <div class="paragraph"> 
+       <p>You can make configure on demand the default for a project by adding the following setting to its <em>gradle.properties</em> file:</p> 
+      </div> 
+      <div class="listingblock"> 
+       <div class="content"> 
+        <pre class="CodeRay highlight"><code data-lang="java">org.gradle.configureondemand=<span class="predefined-constant">true</span></code></pre> 
+       </div> 
+      </div> 
+     </div> 
+     <div class="sect2"> 
+      <h3 id="enable_the_daemon_on_old_gradle_versions"><a class="anchor" href="#enable_the_daemon_on_old_gradle_versions"></a>1.4. Enable the daemon on old Gradle versions</h3> 
+      <div class="paragraph"> 
+       <p>The Gradle daemon is a mechanism for improving the performance of Gradle. As of Gradle 3.0, the daemon is enabled by default, but if you are using an older version, you should definitely enable it on local developer machines. You will see big improvements in build speed by doing so. You can learn how to do that <a href="https://docs.gradle.org/2.14/userguide/gradle_daemon.html">in the 2.14 user guide</a>.</p> 
+      </div> 
+      <div class="paragraph"> 
+       <p>On CI machines the benefit you can expect from the daemon depends on your setup. If you have long-lived CI agents and you build lots of small projects that all use the same Gradle version and JVM arguments, then the daemon can reduce your turnarounds. If your projects are big or more diverse, you probably won’t see much benefit. Generally it is safe to leave the daemon on, as Gradle 3.0 introduced health monitoring which will shut daemons down on memory pressure.</p> 
+      </div> 
+     </div> 
+     <div class="sect2"> 
+      <h3 id="adjust_the_daemon_s_heap_size"><a class="anchor" href="#adjust_the_daemon_s_heap_size"></a>1.5. Adjust the daemon’s heap size</h3> 
+      <div class="paragraph"> 
+       <p>By default Gradle will reserve 1GB of heap space for your build, which is plenty for most projects, especially if you follow our advice on forked compilation further down in this guide. However, some very large builds might need more memory to hold Gradle’s model and caches. If this is the case for you, you can check in this larger memory requirement in your <em>gradle.properties</em> file:</p> 
+      </div> 
+      <div class="literalblock"> 
+       <div class="content"> 
+        <pre>org.gradle.jvmargs=-Xmx2048M</pre> 
+       </div> 
+      </div> 
       <div class="paragraph"> 
        <p>That’s the end of our quick wins. From here on out, improving your build performance will require some elbow grease. We start with perhaps the most important step: finding out which bits of your build are slow and why.</p> 
       </div> 
@@ -210,7 +192,7 @@
     </div> 
    </div> 
    <div class="sect1"> 
-    <h2 id="profile_profile_profile"><a class="anchor" href="#profile_profile_profile"></a>2. Profile, profile, profile</h2> 
+    <h2 id="high_level_profiling"><a class="anchor" href="#high_level_profiling"></a>2. High level profiling</h2> 
     <div class="sectionbody"> 
      <div class="paragraph"> 
       <p>As with any attempt to optimize, your first instinct should be to profile the system you’re interested in. Gradle provides two mechanisms for doing this and both of them give you reports that you can view in a browser. Let’s take a look at these two mechanisms - build scans and profile reports - before then discussing how to interpret the information provided in the reports.</p> 
@@ -234,7 +216,7 @@
       <div class="olist arabic"> 
        <ol class="arabic"> 
         <li> <p>Apply the <em>build-scan</em> plugin <a href="https://scans.gradle.com/setup/step-1">as described on Gradle.com</a></p> </li> 
-        <li> <p>Run your builds with the <code>-Dscan</code> option, e.g. <code>gradle build -Dscan</code></p> </li> 
+        <li> <p>Run your builds with the <code>--scan</code> option, e.g. <code>gradle build --scan</code></p> </li> 
        </ol> 
       </div> 
       <div class="paragraph"> 
@@ -269,7 +251,7 @@
      <div class="sect2"> 
       <h3 id="profile_report"><a class="anchor" href="#profile_report"></a>2.2. Profile report</h3> 
       <div class="paragraph"> 
-       <p>If you don’t have internet access or have some other reason not to use build scans, it’s still trivially easy to profile a Gradle build. Simply add the <code>--profile</code> option to the command line args:</p> 
+       <p>If you don’t have internet access or have some other reason not to use build scans, you can use the <code>--profile</code> command-line option:</p> 
       </div> 
       <div class="literalblock"> 
        <div class="content"> 
@@ -280,7 +262,7 @@
        <p>This will result in the generation of an HTML report that you can find in the <em>build/reports/profile</em> directory of the <em>root</em> project. Each profile report has a timestamp in its name to avoid overwriting existing ones.</p> 
       </div> 
       <div class="paragraph"> 
-       <p>Similar to build scans, the report itself displays a breakdown of the time taken to run the build for a given set of task arguments. Here’s a screenshot of a real profile report showing the different categories that Gradle uses:</p> 
+       <p>The report displays a breakdown of the time taken to run the build, though less detailed than a build scan. Here’s a screenshot of a real profile report showing the different categories that Gradle uses:</p> 
       </div> 
       <div class="imageblock"> 
        <div class="content"> 
@@ -325,7 +307,7 @@
         <p>The sample profile report shows a time of just over 8 seconds for this category, the vast majority of which was spent building the <em>buildSrc</em> project. This part fortunately won’t take so long once <em>buildSrc</em> is built once as Gradle will consider it up to date. The up-to-date checks still take a little time, but nowhere near as much. If you do have problems with a persistently time consuming <em>buildSrc</em> phase, you should consider breaking it out into a separate project whose JAR artifact is added to the build’s classpath.</p> 
        </div> 
        <div class="paragraph"> 
-        <p>The <em>settings.gradle</em> file rarely has computationally or IO expensive code in it. If you find that Gradle is taking a significant amount of time to process it, you should use more traditional profiling methods, such as timing statements in <em>settings.gradle</em> or a profiler, to determine why.</p> 
+        <p>The <em>settings.gradle</em> file rarely has computationally or IO expensive code in it. If you find that Gradle is taking a significant amount of time to process it, you should use more traditional profiling methods, such as the Gradle Profiler to determine why.</p> 
        </div> 
       </div> 
       <div class="sect3"> 
@@ -344,7 +326,7 @@
     <h2 id="configuration"><a class="anchor" href="#configuration"></a>3. Configuration</h2> 
     <div class="sectionbody"> 
      <div class="paragraph"> 
-      <p>As the user guide describes in <a href="https://docs.gradle.org/current/userguide/build_lifecycle.html">the build lifecycle chapter</a>, a Gradle build goes through three phases: initialization, configuration, and execution. The important thing to understand here is that in non-native Gradle builds, configuration code always executes regardless of which tasks will run. That means any expensive work performed during configuration will permanently cripple the build, even for such things as <code>gradle help</code> and <code>gradle tasks</code>.</p> 
+      <p>As the user guide describes in <a href="https://docs.gradle.org/current/userguide/build_lifecycle.html">the build lifecycle chapter</a>, a Gradle build goes through three phases: initialization, configuration, and execution. The important thing to understand here is that configuration code always executes regardless of which tasks will run. That means any expensive work performed during configuration will slow every invocation down, even simple ones like <code>gradle help</code> and <code>gradle tasks</code>.</p> 
      </div> 
      <div class="paragraph"> 
       <p>The profile report will help you identify which projects take the most time to configure, but that’s all. The next few subsections introduce techniques that can help improve the configuration time and explain why they work.</p> 
@@ -361,10 +343,7 @@
      <div class="sect2"> 
       <h3 id="avoid_expensive_or_blocking_work"><a class="anchor" href="#avoid_expensive_or_blocking_work"></a>3.2. Avoid expensive or blocking work</h3> 
       <div class="paragraph"> 
-       <p>This is fairly obvious based on what we’ve already said about the configuration phase, but it’s not hard to accidentally break this rule. It’s usually clear when you’re encrypting stuff or calling remote services during configuration if that code is in a build file. But logic like this is more often found in plugins and occasionally custom task classes, where it’s easy to forget which phase your code is running in. Things only get harder to track when they’re factored into short methods and multiple classes.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>This is not an argument for putting all your build logic into build scripts. That’s generally a recipe for unmaintainable builds. However, if your profile report is indicating that the build is spending more time than expected in the configuration phase, you should start looking at your plugins and custom task classes. A task should generally rely on the build script or plugin that instantiates it to set its properties, rather than performing the configuration itself. If you’re familiar with the principle of Inversion of Control (IoC), that’s what you should be aiming for.</p> 
+       <p>This is fairly obvious based on what we’ve already said about the configuration phase, but it’s not hard to accidentally break this rule. It’s usually clear when you’re encrypting stuff or calling remote services during configuration if that code is in a build file. But logic like this is more often found in plugins and occasionally custom task classes. Any expensive work in a plugin’s <code>apply()</code> method or a tasks’s constructor should be a red flag. The most common and less obvious mistake is resolving dependencies at configuration time, which we cover in its own chapter further below.</p> 
       </div> 
      </div> 
      <div class="sect2"> 
@@ -376,7 +355,7 @@
        <p>In general, we recommend that you use either <code>@CompileStatic</code> on your Groovy classes (where possible) or write those classes in a statically compiled language, such as Java. This only really applies to large projects or plugins that you publish publicly (because they may be applied to large projects by other users). If you do need dynamic Groovy at any point, simply use <code>@CompileDynamic</code> for the relevant methods.</p> 
       </div> 
       <div class="paragraph"> 
-       <p><strong>Note</strong> The DSL you’re used to in the build script relies heavily on Groovy’s dynamic features, so if you want to use static compilation in your plugins, you will have to switch to using Gradle’s core API. For example, to create a new copy task, you would use code like this:</p> 
+       <p><strong>Note</strong> The DSL you’re used to in the build script relies heavily on Groovy’s dynamic features, so if you want to use static compilation in your plugins, you will have to switch to more traditional Java-like syntax. For example, to create a new copy task, you would use code like this:</p> 
       </div> 
       <div class="listingblock"> 
        <div class="content"> 
@@ -411,7 +390,7 @@
       </div> 
      </div> 
      <div class="sect2"> 
-      <h3 id="favor_dependency_resolution_during_execution"><a class="anchor" href="#favor_dependency_resolution_during_execution"></a>4.2. Favor dependency resolution during execution</h3> 
+      <h3 id="don_t_resolve_dependencies_at_configuration_time"><a class="anchor" href="#don_t_resolve_dependencies_at_configuration_time"></a>4.2. Don’t resolve dependencies at configuration time</h3> 
       <div class="paragraph"> 
        <p>Dependency resolution is an expensive process, both in terms of IO and computation. Gradle reduces - and eliminates in some cases - the required network traffic through judicious caching, but there is still work it needs to do. Why is this important? Because if you trigger dependency resolution during the configuration phase, you’re going to add a penalty to every build that runs.</p> 
       </div> 
@@ -430,8 +409,19 @@
       <div class="paragraph"> 
        <p>The <code>files</code> property will force Gradle to resolve the dependencies, and in this example that’s happening during the configuration phase. Now every time you run the build, no matter what tasks you execute, you’ll take a hit from the dependency resolution on that configuration. It would be better to add this in a <code>doFirst()</code> action.</p> 
       </div> 
+      <div class="listingblock"> 
+       <div class="content"> 
+        <pre class="CodeRay highlight"><code data-lang="groovy">task copyFiles(<span class="key">type</span>: Copy) {
+    into <span class="string"><span class="delimiter">"</span><span class="inline"><span class="inline-delimiter">$</span>buildDir</span><span class="content">/output</span><span class="delimiter">"</span></span>
+    from configurations.compile
+    doFirst {
+      println <span class="string"><span class="delimiter">"</span><span class="content">&gt;&gt; Compilation deps: </span><span class="inline"><span class="inline-delimiter">${</span>configurations.compile.files<span class="inline-delimiter">}</span></span><span class="delimiter">"</span></span>
+    }
+}</code></pre> 
+       </div> 
+      </div> 
       <div class="paragraph"> 
-       <p>Note that the <code>from()</code> declaration doesn’t resolve the dependencies because you’re using the configuration itself as an argument, not its files. The <code>Copy</code> task handles the resolution of the configuration itself during task execution, which is exactly what you want.</p> 
+       <p>Note that the <code>from()</code> declaration doesn’t resolve the dependencies because you’re using the <a href="https://docs.gradle.org/current/userguide/artifact_dependencies_tutorial.html#configurations">dependency configuration</a> itself as an argument, not its files. The <code>Copy</code> task handles the resolution of the configuration itself during task execution, which is exactly what you want.</p> 
       </div> 
       <div class="paragraph"> 
        <p>The performance page of build scans explicitly shows how dependency resolution time is split across project configuration and task execution, so it’s easy to identify this particular issue. If you’re using the older profile reports, a simple way to determine whether you’re resolving dependencies during configuration is to run</p> 
@@ -508,16 +498,13 @@
      <div class="sect2"> 
       <h3 id="incremental_build"><a class="anchor" href="#incremental_build"></a>5.2. Incremental build</h3> 
       <div class="paragraph"> 
-       <p>You can can avoid executing tasks, even if they’re required by a user. If neither a task’s inputs nor its output have changed since the last time it was run, why would it need to run again? It’s up to date, which is why you often see the text <code>UP-TO-DATE</code> next to task names when running a build.</p> 
+       <p>You can can avoid executing tasks, even if they’re required by a user. If neither a task’s inputs nor its output have changed since the last time it was run, Gradle will not run it again.</p> 
       </div> 
       <div class="paragraph"> 
        <p>Incremental build is the name Gradle gives to this feature of checking inputs and outputs to determine whether a task needs to run again or not. Most tasks provided by Gradle take part in incremental build because they have been defined that way. You can also make your own tasks integrate with incremental build, as described in the user guide. The basic idea is to mark the task’s properties that have an impact on whether a task needs to run. You can learn more <a href="https://docs.gradle.org/current/userguide/more_about_tasks.html#sec:up_to_date_checks">in the user guide</a>.</p> 
       </div> 
       <div class="paragraph"> 
-       <p>Incremental build is definitely a big boon on the whole, as it helps bring build times down significantly. You do need to be aware, though, that it incurs a cost as well, even for a clean build. This is because it needs to generate and verify checksums among other things. This cost is normally insignificant compared to the execution time of a task, but if all your tasks complete in less than a tenth of a second, incremental build may be slower.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>You can easily identify good candidates for incremental build or tasks that aren’t up to date when they should be by looking at the Task Execution tab of the build profile report. The tasks are sorted by longest duration first, making it easy to pick out the slowest tasks. If they’re taking longer than half a second, you should probably consider enabling incremental build on them. You can also take the safe approach of making all tasks incremental.</p> 
+       <p>You can easily identify good candidates for incremental build or tasks that aren’t up to date when they should be by looking at the timeline view in a build scan. The tasks are sorted by longest duration first, making it easy to pick out the slowest tasks. Pick the slowest of your custom tasks and make it incremental, then measure again and repeat.</p> 
       </div> 
      </div> 
      <div class="sect2"> 
@@ -544,30 +531,13 @@
     </div> 
    </div> 
    <div class="sect1"> 
-    <h2 id="other_performance_tweaks"><a class="anchor" href="#other_performance_tweaks"></a>6. Other performance tweaks</h2> 
+    <h2 id="suggestions_for_java_projects"><a class="anchor" href="#suggestions_for_java_projects"></a>6. Suggestions for Java projects</h2> 
     <div class="sectionbody"> 
      <div class="paragraph"> 
-      <p>You will sometimes come across tasks that need to run, but simply take a while. In such cases, you need to look at the task implementation. Or, in the case of third party tasks, such as those provided with Gradle, investigate the task configuration to see whether there are options that will improve the task execution time.</p> 
-     </div> 
-     <div class="paragraph"> 
-      <p>As the final stage of this guide, we’ll look at useful configuration for some of the core Gradle tasks.</p> 
+      <p>The following suggestions are specific to projects using the <code>java</code> plugin or one of the other JVM languages.</p> 
      </div> 
      <div class="sect2"> 
-      <h3 id="boost_daemon_s_heap_size"><a class="anchor" href="#boost_daemon_s_heap_size"></a>6.1. Boost daemon’s heap size</h3> 
-      <div class="paragraph"> 
-       <p>Running builds in memory-constrained environments will have a significant and detrimental impact on the performance of those builds as the garbage collector has to do a lot more work. Attach JConsole or VisualVM to a Gradle daemon process to see whether it’s using close to the maximum heap size. If it is, increase the max heap size through this property in <em>gradle.properties</em>:</p> 
-      </div> 
-      <div class="literalblock"> 
-       <div class="content"> 
-        <pre>org.gradle.jvmargs=-Xmx2048M</pre> 
-       </div> 
-      </div> 
-      <div class="paragraph"> 
-       <p>You should immediately see an improvement in build times once you’ve done this.</p> 
-      </div> 
-     </div> 
-     <div class="sect2"> 
-      <h3 id="running_tests_jvm"><a class="anchor" href="#running_tests_jvm"></a>6.2. Running tests (JVM)</h3> 
+      <h3 id="running_tests"><a class="anchor" href="#running_tests"></a>6.1. Running tests</h3> 
       <div class="paragraph"> 
        <p>A significant proportion of the build time for many projects consists of the test tasks that run. These could be a mixture of unit and integration tests, with the latter often being significantly slower. Gradle has a few ways to help your tests complete faster:</p> 
       </div> 
@@ -582,7 +552,7 @@
        <p>Let’s look at each of these in turn.</p> 
       </div> 
       <div class="sect3"> 
-       <h4 id="parallel_test_execution"><a class="anchor" href="#parallel_test_execution"></a>6.2.1. Parallel test execution</h4> 
+       <h4 id="parallel_test_execution"><a class="anchor" href="#parallel_test_execution"></a>6.1.1. Parallel test execution</h4> 
        <div class="paragraph"> 
         <p>Gradle will happily run multiple test cases in parallel, which is useful when you have several CPU cores and don’t want to waste most of them. To enable this feature, just use the following configuration setting on the relevant <code>Test</code> task(s):</p> 
        </div> 
@@ -604,7 +574,7 @@
        </div> 
       </div> 
       <div class="sect3"> 
-       <h4 id="forking_options"><a class="anchor" href="#forking_options"></a>6.2.2. Forking options</h4> 
+       <h4 id="forking_options"><a class="anchor" href="#forking_options"></a>6.1.2. Forking options</h4> 
        <div class="paragraph"> 
         <p>Gradle will run all tests in a single forked VM by default. This can be problematic if there are a lot of tests or some very memory-hungry ones. One option is to run the tests with a big heap, but you will still be limited by system memory and might encounter heavy garbage collection that slows the tests down.</p> 
        </div> 
@@ -621,7 +591,7 @@
        </div> 
       </div> 
       <div class="sect3"> 
-       <h4 id="report_generation"><a class="anchor" href="#report_generation"></a>6.2.3. Report generation</h4> 
+       <h4 id="report_generation"><a class="anchor" href="#report_generation"></a>6.1.3. Report generation</h4> 
        <div class="paragraph"> 
         <p>Gradle will automatically create test reports by default regardless of whether you want to look at them. That report generation takes time, slowing down the overall build. Reports are definitely useful, but do you need them every time you run the build? Perhaps you only care if the tests succeed or not.</p> 
        </div> 
@@ -654,22 +624,20 @@
       </div> 
      </div> 
      <div class="sect2"> 
-      <h3 id="compiling_java"><a class="anchor" href="#compiling_java"></a>6.3. Compiling Java</h3> 
+      <h3 id="compiling_java"><a class="anchor" href="#compiling_java"></a>6.2. Compiling Java</h3> 
       <div class="paragraph"> 
        <p>The Java compiler is quite fast, especially compared to other languages on the JVM. And yet, if you’re compiling hundreds of non-trivial Java classes, even a short compilation time adds up to something significant. You can of course upgrade your hardware to make compilation go faster, but that can be an expensive solution. Gradle offers a couple of software-based solutions that might be more to your liking:</p> 
       </div> 
       <div class="ulist"> 
        <ul> 
         <li> <p>Compiler daemon</p> </li> 
+        <li> <p>Compile avoidance and the java-library plugin</p> </li> 
         <li> <p>Incremental compilation</p> </li> 
        </ul> 
       </div> 
-      <div class="paragraph"> 
-       <p>Both of these are incubating at the time of writing, but they are worth experimenting with if you’re desperate to eke out better build performance.</p> 
-      </div> 
      </div> 
      <div class="sect2"> 
-      <h3 id="compiler_daemon"><a class="anchor" href="#compiler_daemon"></a>6.4. Compiler daemon</h3> 
+      <h3 id="compiler_daemon"><a class="anchor" href="#compiler_daemon"></a>6.3. Compiler daemon</h3> 
       <div class="paragraph"> 
        <p>The Gradle Java plugin allows you to run the compiler as a separate process by using the following configuration for any <code>JavaCompile</code> task:</p> 
       </div> 
@@ -689,103 +657,71 @@
        </div> 
       </div> 
       <div class="paragraph"> 
-       <p>This has two benefits:</p> 
-      </div> 
-      <div class="olist arabic"> 
-       <ol class="arabic"> 
-        <li> <p>Gradle can handle compilation of very large numbers of source files concurrently without forcing you to increase the heap size of the main Gradle process or daemon.</p> </li> 
-        <li> <p>The compiler process is reused between builds, significantly reducing the overall compilation times.</p> </li> 
-       </ol> 
+       <p>This process is reused for the duration of a build, so the forking overhead is minimal. The benefit of forking is that the memory-intensive compilation happens in a different process, leading to much less garbage collection in the main Gradle daemon. Less garbage collection in the daemon means that Gradle’s infrastructure can run faster, especially if you are also using <code>--parallel</code>.</p> 
       </div> 
       <div class="paragraph"> 
        <p>It’s unlikely to be useful for small projects, but you should definitely consider it if a single task is compiling close to a thousand or more source files together.</p> 
       </div> 
      </div> 
      <div class="sect2"> 
-      <h3 id="incremental_compilation"><a class="anchor" href="#incremental_compilation"></a>6.5. Incremental compilation</h3> 
+      <h3 id="compile_avoidance"><a class="anchor" href="#compile_avoidance"></a>6.4. Compile avoidance</h3> 
       <div class="paragraph"> 
-       <p>You may wonder why incremental compilation is an optional extra for Gradle rather than the default. Even IDEs have their own incremental compilers, right? The reason for this state of affairs is the standard Java compiler itself, the one that comes with the JDK.</p> 
+       <p>A lot of the time, you are only changing internal implementation details of your code, e.g. editing a method body. Starting with Gradle 3.4, these so-called ABI-compatible changes no longer trigger recompilation of downstream projects. This especially improves build times in large multi-project builds with deep dependency chains.</p> 
       </div> 
       <div class="paragraph"> 
-       <p>The standard compiler does attempt to work out what files need recompiling based on a set of changes, but this is rather unreliable. The Java developers amongst you have probably encountered a few instances where you had to run a clean first to fix some compilation issues. So Gradle avoids the potential problems from this by not using the compiler to determine what needs to be recompiled.</p> 
+       <p>Note: If you use annotation processors, you need to explicitly declare them in order for compile avoidance to work. Read more about <a href="https://docs.gradle.org/current/userguide/java_plugin.html#sec:java_compile_avoidance">compile avoidance</a> in the user guide.</p> 
       </div> 
+     </div> 
+     <div class="sect2"> 
+      <h3 id="the_java_library_plugin"><a class="anchor" href="#the_java_library_plugin"></a>6.5. The java-library plugin</h3> 
       <div class="paragraph"> 
-       <p>Still, incremental compilation can provide real performance benefits, so version 2.1 of Gradle introduced it for Java for the first time. It’s still an incubating feature and may unfortunately have bugs, but it’s very easy to enable and disable. Simply use the following configuration:</p> 
+       <p>For a long time, you would declare your compile time dependencies using the <code>compile</code> configuration and all of them would be leaked into downstream projects. Since Gradle 3.4, you can now clearly separate which dependencies are part of your <code>api</code> and which are only <code>implementation</code> details. Implementation dependencies are not leaked into the compile classpath of downstream projects, which means that they will no longer be recompiled when such an implementation detail changes.</p> 
       </div> 
-      <div class="listingblock"> 
+      <div class="literalblock"> 
        <div class="content"> 
-        <pre class="CodeRay highlight"><code data-lang="groovy">compileJava.options.incremental = <span class="predefined-constant">true</span></code></pre> 
+        <pre>dependencies {
+   api project("myUtils")
+   implementation "com.google.guava:guava:21.0"
+}</pre> 
        </div> 
       </div> 
       <div class="paragraph"> 
-       <p>Just be aware that it is still an incubating feature. That said, you can expect continued improvements in future versions of Gradle.</p> 
+       <p>This can significantly reduce the "ripple" effect of a single change in large multi-project builds. The <code>implementation</code> Configuration is available in the <code>java</code> plugin. <code>api</code> dependencies can only be defined by libraries, which should use the new <a href="https://docs.gradle.org/current/userguide/java_library_plugin.html"><code>java-library</code></a> plugin.</p> 
+      </div> 
+     </div> 
+     <div class="sect2"> 
+      <h3 id="incremental_compilation"><a class="anchor" href="#incremental_compilation"></a>6.6. Incremental compilation</h3> 
+      <div class="paragraph"> 
+       <p>Gradle can analyze dependencies down to the individual class level in order to recompile only the classes that were affected by a change. This option will soon become the default setting, but you can already use it today to significantly speed up your incremental build times:</p> 
+      </div> 
+      <div class="literalblock"> 
+       <div class="content"> 
+        <pre>tasks.withType(JavaCompile) {
+    options.incremental = true
+}</pre> 
+       </div> 
       </div> 
      </div> 
     </div> 
    </div> 
    <div class="sect1"> 
-    <h2 id="suggestions_for_android_builds"><a class="anchor" href="#suggestions_for_android_builds"></a>7. Suggestions for Android builds</h2> 
+    <h2 id="low_level_profiling"><a class="anchor" href="#low_level_profiling"></a>7. Low level profiling</h2> 
     <div class="sectionbody"> 
      <div class="paragraph"> 
-      <p>Everything we have talked about so far applies to Android builds too, since they’re based on Gradle. Yet Android also introduces its own performance factors, particularly around the CPU-intensive dexing process. Here we provide some additional ideas for improving Android builds specifically.</p> 
-     </div> 
-     <div class="sect2"> 
-      <h3 id="use_the_latest_android_plugin"><a class="anchor" href="#use_the_latest_android_plugin"></a>7.1. Use the latest Android plugin</h3> 
-      <div class="paragraph"> 
-       <p>The Android plugin is similar to Gradle in that newer versions introduce improved build performance. For example, version 2.10 of the plugin enabled incremental compilation by default and added support for in-process dexing.</p> 
-      </div> 
-     </div> 
-     <div class="sect2"> 
-      <h3 id="invest_in_fast_cpus"><a class="anchor" href="#invest_in_fast_cpus"></a>7.2. Invest in fast CPUs</h3> 
-      <div class="paragraph"> 
-       <p>Since dexing is CPU-intensive, a significantly faster CPU will deliver a significantly faster build. Also note that dexing uses a significant amount of memory, so you should monitor the heap usage for your build when profiling it. You may find it pays to increase the maximum heap size for Gradle.</p> 
-      </div> 
-     </div> 
-     <div class="sect2"> 
-      <h3 id="optimize_multidex_development_builds"><a class="anchor" href="#optimize_multidex_development_builds"></a>7.3. Optimize multidex development builds</h3> 
-      <div class="paragraph"> 
-       <p>Creating multidex output for your project typically adds a significant amount of time to your build due to the merging process. You can mitigate this by setting a minimum SDK version of 21, which allows the Android plugin to perform more efficient dexing.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>Of course, in most cases this isn’t feasible in general because older versions of Android are still prevalent and many of you will want to support those devices. However, if you don’t mind developing and testing against SDK 21+ only, then can set up a development flavor that targets a minimum SDK version of 21, while the production flavor targets an older version. This results in a faster build when working on the project code.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>Here’s an example partial configuration with the two flavors:</p> 
-      </div> 
-      <div class="listingblock"> 
-       <div class="content"> 
-        <pre class="CodeRay highlight"><code data-lang="groovy">android {
-    productFlavors {
-        dev {
-            minSdkVersion <span class="integer">21</span>
-        }
-        prod {
-            minSdkVersion <span class="integer">14</span>
-        }
-    }
-}</code></pre> 
-       </div> 
-      </div> 
-      <div class="paragraph"> 
-       <p>You can find out more about this feature in the <a href="https://developer.android.com/studio/build/multidex.html#dev-build">Android Studio user guide</a>. Whether you use this approach or not will depend on how you see the trade off between development build speed and consistency in versions between development and production testing.</p> 
-      </div> 
-     </div> 
-     <div class="sect2"> 
-      <h3 id="use_discretion_when_adding_build_types_and_flavors"><a class="anchor" href="#use_discretion_when_adding_build_types_and_flavors"></a>7.4. Use discretion when adding build types and flavors</h3> 
-      <div class="paragraph"> 
-       <p>The more build types and flavors you create, the longer it will take for Gradle to configure your project. So what you can do is wrap flavor and build type declarations in conditions - via <code>if</code> statements typically - such that whoever runs the build can switch flavors and build type on or off through project or system properties.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>For example, if a developer only ever builds debug versions of a project, they could set a project property that disables the non-debug build types and the non-development flavors. They can still build whatever they need simply by passing different property values, but the default would result in a faster build.</p> 
-      </div> 
-      <div class="paragraph"> 
-       <p>This does make builds less maintainable, though, so you should only use this approach where you get a significant boost in build speed. Conventions in property names can help with the build maintenance too.</p> 
-      </div> 
+      <p>Sometimes your build can be slow even though your build scripts are doing everything right. This often comes down to inefficiencies in plugins and custom tasks or constrained resources. The best way to find these kinds of bottlenecks is using the <a href="https://github.com/gradle/gradle-profiler">Gradle Profiler</a>. The Gradle Profiler allows you to define scenarios like "Running 'assemble' after making an ABI-breaking change" and then automatically runs your build several times to warm it up and collect profiling data. It can be used to produce build scans or together with other major profilers like JProfiler and YourKit. Using these method-level profilers can often help you find ineffcient algorithms in custom plugins. If you find that something in Gradle itself is slowing down your build, don’t hesitate to send us a profiler snapshot at <a href="mailto:performance@gradle.com">performance@gradle.com</a>.</p> 
      </div> 
     </div> 
    </div> 
    <div class="sect1"> 
-    <h2 id="summary"><a class="anchor" href="#summary"></a>8. Summary</h2> 
+    <h2 id="suggestions_for_android_builds"><a class="anchor" href="#suggestions_for_android_builds"></a>8. Suggestions for Android builds</h2> 
+    <div class="sectionbody"> 
+     <div class="paragraph"> 
+      <p>Everything we have talked about so far applies to Android builds too, since they’re based on Gradle. Yet Android also introduces its own performance factors. The Android Studio team has put together their own excellent <a href="https://developer.android.com/studio/build/optimize-your-build.html">performance guide</a>. You can also <a href="https://www.youtube.com/watch?v=7ll-rkLCtyk">watch the accompanying talk</a> from Google IO 2017.</p> 
+     </div> 
+    </div> 
+   </div> 
+   <div class="sect1"> 
+    <h2 id="summary"><a class="anchor" href="#summary"></a>9. Summary</h2> 
     <div class="sectionbody"> 
      <div class="paragraph"> 
       <p>Performance is a feature and the Gradle team are always attempting to make the Gradle defaults as fast as possible because they know that their users' time is valuable. Even so, Gradle supports a huge variety of builds, which means that the defaults won’t always be ideal for <em>your</em> project. That’s why we introduced you to some settings and task options that allow you to tweak the behavior of the build in your favor. You should also familiarise yourself with any other available options on your long running tasks and with the generic Gradle build environment settings.</p> 
@@ -804,7 +740,7 @@
   </div> 
   <div id="footer"> 
    <div id="footer-text">
-     Last updated 2017-05-30 15:41:55 UTC 
+     Last updated 2017-06-07 09:45:15 UTC 
    </div> 
   </div>  
  </body>
