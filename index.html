@@ -141,7 +141,7 @@
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Parallel builds require projects to be decoupled at execution time, i.e. tasks in different projects must not modify shared state. Read more about that topic in <a href="https://docs.gradle.org/current/userguide/multi_project_builds.html#sec:parallel_execution">the User Manual</a> before using <code>--parallel</code> extensively. Also be aware that Gradle versions up until 3.5 can run <code>clean</code> and <code>build</code> tasks in parallel, resulting in failures. This will be fixed in Gradle 4.0. Until then it is best to call <code>clean</code> separately.
+Parallel builds require projects to be decoupled at execution time, i.e. tasks in different projects must not modify shared state. Read more about that topic in <a href="https://docs.gradle.org/current/userguide/multi_project_builds.html#sec:parallel_execution">the User Manual</a> before using <code>--parallel</code> extensively. Also be aware that Gradle versions before 4.0 could run <code>clean</code> and <code>build</code> tasks in parallel, resulting in failures. On these older versions it is best to call <code>clean</code> separately.
 </td>
 </tr>
 </table>
@@ -817,7 +817,7 @@ slowing down your build, don&#8217;t hesitate to send us a profiler snapshot at 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-07-07 07:43:55 UTC
+Last updated 2017-07-28 15:44:33 UTC
 </div>
 </div>
 </body>
