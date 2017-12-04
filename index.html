@@ -117,36 +117,11 @@
 <h2 id="build_scans"><a class="anchor" href="#build_scans"></a>Build scans</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><a href="https://gradle.com/build-scans">Build scans</a> are a persistent, shareable record of what happened when running a build. With build scans you can</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Understand what happened in your build via a rich web interface</p>
-</li>
-<li>
-<p>Track key build metrics of your builds, for both CI builds and local development builds</p>
-</li>
-<li>
-<p>Collaborate with colleagues to efficiently solve problems and improve things together</p>
-</li>
-<li>
-<p>Monitor your builds to proactively identify problems and opportunities for improvement</p>
-</li>
-</ul>
+<p><a href="https://gradle.com/build-scans">Build scans</a> are a persistent, shareable record of what happened when running a build. With build scans, you gain deep insights about your build to identify and fix performance bottlenecks.</p>
 </div>
 <div class="paragraph">
-<p>You can easily enable build scans in your build by following these steps:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Apply the <a href="https://scans.gradle.com/get-started">build scan plugin</a></p>
-</li>
-<li>
-<p>Run your builds with the <code>--scan</code> command line option, e.g. <code>gradle build --scan</code> or configure your build to <a href="https://docs.gradle.com/build-scan-plugin/#getting_set_up">automatically publish build scans</a></p>
-</li>
-</ol>
+<p>If you are using Gradle 4.3+, you can easily create a build scan by using the <code>--scan</code> command line option, e.g. <code>gradle build --scan</code>.
+For older Gradle versions, see the <a href="https://docs.gradle.com/build-scan-plugin/#getting_set_up">Build Scan Plugin User Manual</a> on how to enable build scans.</p>
 </div>
 <div class="paragraph">
 <p>Gradle displays the URL where your build scan is available at the end of the build execution:</p>
@@ -156,9 +131,6 @@
 <img src="images/build-scan-url.png" alt="build scan url">
 </div>
 <div class="title">Figure 1. Build scan link at end of the build output</div>
-</div>
-<div class="paragraph">
-<p>Build scans are a powerful tool at your disposal to improve, amongst other things, the performance of your Gradle builds.</p>
 </div>
 <div class="paragraph">
 <p>Next, the guide will cover some quick improvements that can increase your build&#8217;s performance. After that will be a deeper dive into profiling your build with build scans.</p>
@@ -988,7 +960,7 @@ slowing down your build, don&#8217;t hesitate to send a profiler snapshot at <a 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-29 14:33:00 +00:00
+Last updated 2017-12-04 14:39:01 +00:00
 </div>
 </div>
 </body>
