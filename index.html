@@ -236,7 +236,7 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <h2 id="profiling_with_build_scans"><a class="anchor" href="#profiling_with_build_scans"></a>Profiling with build scans</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>When using build scans in the context of profiling a build, the main area of interest in the early stages of diagnosis is the performance page. To get there, follow the link highlighted in the following screenshot of the build scan home page:</p>
+<p>When using build scans in the context of profiling a build, the main area of interest in the early stages of diagnosis is the performance page. To get there, click <em>"Performance"</em>&nbsp; in the left hand navigation menu, or follow the link highlighted in the following screenshot of the build scan home page:</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -274,16 +274,16 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="title">Figure 6. Build scan configuration breakdown</div>
 </div>
 <div class="paragraph">
-<p>Here you can see the scripts and plugins that were applied to the project in descending order of how long they took to apply. The slowest plugin and script applications are good candidates for optimization, and you can dig further into those items in the list. For example, the plugin <code>com.example.bar</code> was applied once but took 7 seconds - you can expand that row to see how and where this plugin was applied to the build.</p>
+<p>Here you can see the scripts and plugins that were applied to the project in descending order of how long they took to apply. The slowest plugin and script applications are good candidates for optimization, and you can dig further into those items in the list. For example, the script <code>script-b.gradle</code> was applied once but took 3 seconds - you can expand that row to see how and where this was applied to the build.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/bar-plugin-application.png" alt="bar plugin application">
+<img src="images/script-b-application.png" alt="script b application">
 </div>
-<div class="title">Figure 7. Showing the application of com.example.bar to the build</div>
+<div class="title">Figure 7. Showing the application of script-b.gradle to the build</div>
 </div>
 <div class="paragraph">
-<p>You can see that this plugin is applied once, by the project <code>:app1</code> from inside of that project&#8217;s <code>build.gradle</code> file.</p>
+<p>You can see that this script is applied once, by the project <code>:app1</code> from inside of that project&#8217;s <code>build.gradle</code> file.</p>
 </div>
 <div class="paragraph">
 <p>The next few subsections introduce techniques that can help improve the configuration time and explain why they work.</p>
@@ -291,22 +291,22 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="sect2">
 <h3 id="apply_plugins_judiciously"><a class="anchor" href="#apply_plugins_judiciously"></a>Apply plugins judiciously</h3>
 <div class="paragraph">
-<p>Every plugin that you apply to a project adds to the overall configuration time. Some plugins have a greater impact than others. That doesn’t mean you should avoid using plugins, but you should take care to only apply them where they’re needed. For example, it’s easy to apply plugins to all projects via <code>allprojects {}</code> or <code>subprojects {}</code> even if not every project needs them.</p>
+<p>Every plugin and script that you apply to a project adds to the overall configuration time. Some plugins have a greater impact than others. That doesn’t mean you should avoid using plugins, but you should take care to only apply them where they’re needed. For example, it’s easy to apply plugins to all projects via <code>allprojects {}</code> or <code>subprojects {}</code> even if not every project needs them.</p>
 </div>
 <div class="paragraph">
-<p>In the above build scan example, you can see that the plugin <code>com.example.foo</code> is applied to 3 projects inside the build:</p>
+<p>In the above build scan example, you can see that the script <code>script-a.gradle</code> is applied to 3 projects inside the build:</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/foo-plugin-application.png" alt="foo plugin application">
+<img src="images/script-a-application.png" alt="script a application">
 </div>
-<div class="title">Figure 8. Showing the application of com.example.foo to the build</div>
-</div>
-<div class="paragraph">
-<p>This plugin takes 3 seconds to run, and as it is applied to 3 projects from the root <code>build.gradle</code> file, it is introducing a 9 second delay to the configuration phase.</p>
+<div class="title">Figure 8. Showing the application of script-a.gradle to the build</div>
 </div>
 <div class="paragraph">
-<p>Ideally, plugins should not incur a significant configuration-time cost. If they do, the focus should be on improving the plugin. Nonetheless, in projects with many modules and a significant configuration time, you should spend a little time identifying any plugins that have a notable impact.</p>
+<p>This script takes 1 second to run, and as it is applied to 3 projects from the root <code>build.gradle</code> file, it is introducing a 3 second delay to the configuration phase.</p>
+</div>
+<div class="paragraph">
+<p>Ideally, plugins and scripts should not incur a significant configuration-time cost. If they do, the focus should be on improving them. Nonetheless, in projects with many modules and a significant configuration time, you should spend a little time identifying any plugins that have a notable impact.</p>
 </div>
 </div>
 <div class="sect2">
@@ -414,7 +414,7 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="title">Figure 10. Dependency resolution at configuration time</div>
 </div>
 <div class="paragraph">
-<p>Here, you can quickly identify the cause of this particular performance issue. You should have a <em>"resolved dependencies during project configuration"</em>&nbsp; time of  0&nbsp;seconds, and this example shows the build is resolving dependencies too early in the lifecycle.  Also on the "Performance" page is a "Settings and suggestions" tab which will show you which dependencies were being resolved during project configuration.</p>
+<p>Here, you can quickly identify the cause of this particular performance issue. The time spent resolving dependencies during <em>"project configuration"</em>&nbsp; should be 0&nbsp;seconds, and this example shows the build is resolving dependencies too early in the lifecycle.  Also on the "Performance" page is a "Settings and suggestions" tab which will show you which dependencies were being resolved during project configuration.</p>
 </div>
 <div class="paragraph">
 <p>If you are using the profiler, you can get similar (but less detailed) information can by running this command:</p>
@@ -960,7 +960,7 @@ slowing down your build, don&#8217;t hesitate to send a profiler snapshot at <a 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-12-04 14:39:01 +00:00
+Last updated 2018-01-09 13:18:43 +00:00
 </div>
 </div>
 </body>
