@@ -3,14 +3,14 @@
 <head><link crossorigin href="//assets.gradle.com" rel="preconnect">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,400i">
 <link rel="stylesheet" href="https://guides.gradle.org/css/asciidoctor.css">
-<link rel="stylesheet" href="https://guides.gradle.org/css/docs-blue-theme-4.5.2.css">
+<link rel="stylesheet" href="https://guides.gradle.org/css/docs-blue-theme-4.7.css">
 <link rel="apple-touch-icon" sizes="180x180" href="https://guides.gradle.org/icon/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="https://guides.gradle.org/icon/favicon-32x32.png" sizes="32x32">
 <link rel="icon" type="image/png" href="https://guides.gradle.org/icon/favicon-16x16.png" sizes="16x16">
 <link rel="manifest" href="https://guides.gradle.org/icon/manifest.json">
 <link rel="mask-icon" href="https://guides.gradle.org/icon/safari-pinned-tab.svg" color="#5bbad5">
 <link rel="shortcut icon" href="https://guides.gradle.org/icon/favicon.ico">
-<script defer src="https://guides.gradle.org/js/guides.js"></script>
+<script defer src="https://guides.gradle.org/js/guides-4.7.js"></script>
 <script defer src="https://guides.gradle.org/js/set-time-to-complete-text.js"></script>
 <script async src="https://guides.gradle.org/js/autotrack.js"></script>
 
@@ -21,7 +21,6 @@
 <meta name="author" content="Peter Ledbrook, Stefan Oehme, Tim Yates, François Guillot, Craig Atkinson">
 <title>Improving the Performance of Gradle Builds</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-<link rel="stylesheet" href="./coderay-asciidoctor.css">
 </head>
 <body class="article">
 <header class="site-layout__header site-header" itemscope="itemscope" itemtype="https://schema.org/WPHeader">
@@ -184,7 +183,7 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="listingblock">
 <div class="title">gradle.properties</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">org.gradle.parallel=<span class="predefined-constant">true</span></code></pre>
+<pre class="prettyprint highlight"><code class="language-java" data-lang="java">org.gradle.parallel=true</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -226,7 +225,7 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="listingblock">
 <div class="title">gradle.properties</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">org.gradle.configureondemand=<span class="predefined-constant">true</span></code></pre>
+<pre class="prettyprint highlight"><code class="language-java" data-lang="java">org.gradle.configureondemand=true</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -332,9 +331,9 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">project.tasks.create(<span class="string"><span class="delimiter">&quot;</span><span class="content">copyFiles</span><span class="delimiter">&quot;</span></span>, Copy) { Task t -&gt;
-    t.into <span class="string"><span class="delimiter">&quot;</span><span class="inline"><span class="inline-delimiter">${</span>project.buildDir<span class="inline-delimiter">}</span></span><span class="content">/output</span><span class="delimiter">&quot;</span></span>
-    t.from project.configurations.getByName(<span class="string"><span class="delimiter">&quot;</span><span class="content">compile</span><span class="delimiter">&quot;</span></span>)
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">project.tasks.create("copyFiles", Copy) { Task t -&gt;
+    t.into "${project.buildDir}/output"
+    t.from project.configurations.getByName("compile")
 }</code></pre>
 </div>
 </div>
@@ -382,9 +381,9 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">task copyFiles(<span class="key">type</span>: Copy) {
-    println <span class="string"><span class="delimiter">&quot;</span><span class="content">&gt;&gt; Compilation deps: </span><span class="inline"><span class="inline-delimiter">${</span>configurations.compile.files<span class="inline-delimiter">}</span></span><span class="delimiter">&quot;</span></span>
-    into <span class="string"><span class="delimiter">&quot;</span><span class="inline"><span class="inline-delimiter">$</span>buildDir</span><span class="content">/output</span><span class="delimiter">&quot;</span></span>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">task copyFiles(type: Copy) {
+    println "&gt;&gt; Compilation deps: ${configurations.compile.files}"
+    into "$buildDir/output"
     from configurations.compile
 }</code></pre>
 </div>
@@ -395,11 +394,11 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">task copyFiles(<span class="key">type</span>: Copy) {
-    into <span class="string"><span class="delimiter">&quot;</span><span class="inline"><span class="inline-delimiter">$</span>buildDir</span><span class="content">/output</span><span class="delimiter">&quot;</span></span>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">task copyFiles(type: Copy) {
+    into "$buildDir/output"
     from configurations.compile
     doFirst {
-        println <span class="string"><span class="delimiter">&quot;</span><span class="content">&gt;&gt; Compilation deps: </span><span class="inline"><span class="inline-delimiter">${</span>configurations.compile.files<span class="inline-delimiter">}</span></span><span class="delimiter">&quot;</span></span>
+        println "&gt;&gt; Compilation deps: ${configurations.compile.files}"
     }
 }</code></pre>
 </div>
@@ -626,7 +625,7 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="listingblock">
 <div class="title">gradle.properties</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">org.gradle.jvmargs=-Xmx2048M</code></pre>
+<pre class="prettyprint highlight"><code class="language-java" data-lang="java">org.gradle.jvmargs=-Xmx2048M</code></pre>
 </div>
 </div>
 </div>
@@ -679,7 +678,7 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">test.maxParallelForks = <span class="integer">4</span></code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test.maxParallelForks = 4</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -688,7 +687,7 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">test.maxParallelForks = <span class="predefined-type">Runtime</span>.runtime.availableProcessors().intdiv(<span class="integer">2</span>) ?: <span class="integer">1</span></code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test.maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -706,7 +705,7 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">test.forkEvery = <span class="integer">100</span></code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test.forkEvery = 100</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -724,9 +723,9 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">test {
-    reports.html.enabled = <span class="predefined-constant">false</span>
-    reports.junitXml.enabled = <span class="predefined-constant">false</span>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test {
+    reports.html.enabled = false
+    reports.junitXml.enabled = false
 }</code></pre>
 </div>
 </div>
@@ -739,8 +738,8 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">test {
-    <span class="keyword">if</span> (!project.hasProperty(<span class="string"><span class="delimiter">&quot;</span><span class="content">createReports</span><span class="delimiter">&quot;</span></span>)) {
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test {
+    if (!project.hasProperty("createReports")) {
         reports...
     }
 }</code></pre>
@@ -774,7 +773,7 @@ our advice on forked compilation further down in this guide. However, some very 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">&lt;taskname&gt;.options.fork = <span class="predefined-constant">true</span></code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">&lt;taskname&gt;.options.fork = true</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -783,8 +782,8 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="listingblock">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">tasks.withType(JavaCompile) {
-    options.fork = <span class="predefined-constant">true</span>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(JavaCompile) {
+    options.fork = true
 }</code></pre>
 </div>
 </div>
@@ -815,9 +814,9 @@ are not leaked into the compile classpath of downstream projects, which means th
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-   api project(<span class="string"><span class="delimiter">&quot;</span><span class="content">myUtils</span><span class="delimiter">&quot;</span></span>)
-   implementation <span class="string"><span class="delimiter">&quot;</span><span class="content">com.google.guava:guava:21.0</span><span class="delimiter">&quot;</span></span>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">dependencies {
+   api project("myUtils")
+   implementation "com.google.guava:guava:21.0"
 }</code></pre>
 </div>
 </div>
@@ -834,8 +833,8 @@ will soon become the default setting, but you can already use it today to signif
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">tasks.withType(JavaCompile) {
-    options.incremental = <span class="predefined-constant">true</span>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(JavaCompile) {
+    options.incremental = true
 }</code></pre>
 </div>
 </div>
@@ -961,6 +960,9 @@ slowing down your build, don&#8217;t hesitate to send a profiler snapshot at <a 
 </div>
 </div>
 </div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.js"></script>
+<script>prettyPrint()</script>
 <footer class="site-layout__footer site-footer" itemscope="itemscope" itemtype="https://schema.org/WPFooter">
     <nav class="site-footer__navigation" itemtype="https://schema.org/SiteNavigationElement">
         <section class="site-footer__links">
