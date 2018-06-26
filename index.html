@@ -386,7 +386,7 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="title">Figure 8. Showing the application of script-a.gradle to the build</div>
 </div>
 <div class="paragraph">
-<p>This script takes 1 second to run, and as it is applied to 3 projects from the root <code>build.gradle</code> file, it is introducing a 3 second delay to the configuration phase.</p>
+<p>This script takes 1 second to run, and as it is applied to 3 projects from the root build script, it is introducing a 3 second delay to the configuration phase.</p>
 </div>
 <div class="paragraph">
 <p>Ideally, plugins and scripts should not incur a significant configuration-time cost. If they do, the focus should be on improving them. Nonetheless, in projects with many modules and a significant configuration time, you should spend a little time identifying any plugins that have a notable impact.</p>
@@ -400,6 +400,18 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 </div>
 <div class="sect2">
 <h3 id="statically_compile_tasks_and_plugins"><a class="anchor" href="#statically_compile_tasks_and_plugins"></a><a class="link" href="#statically_compile_tasks_and_plugins">Statically compile tasks and plugins</a></h3>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If your build logic is comprised of plugins written in statically compiled JVM languages like Java or Kotlin and build scripts written using the Gradle Kotlin DSL, then you can skip this and move on to the <a href="#dependency_resolution">next section</a>.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Plugins and occasionally tasks perform work during the configuration phase. These are often written in Groovy for its concise syntax, API extensions to the JDK, and functional methods using closures. However, it’s important to bear in mind that there is a small cost associated with method calls in dynamic Groovy. When you have lots of method calls repeated across lots of projects, the cost can add up.</p>
 </div>
@@ -410,11 +422,11 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <p><strong>Note:</strong> The DSL you’re used to in the build script relies heavily on Groovy’s dynamic features, so if you want to use static compilation in your plugins, you will have to switch to more traditional Java-like syntax. For example, to create a new copy task, you would use code like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">build.gradle</div>
+<div class="title">src/main/groovy/MyPlugin.groovy</div>
 <div class="content">
-<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">project.tasks.create("copyFiles", Copy) { Task t -&gt;
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">project.tasks.create('copyFiles', Copy) { Task t -&gt;
     t.into "${project.buildDir}/output"
-    t.from project.configurations.getByName("compile")
+    t.from project.configurations.getByName('compile')
 }</code></pre>
 </div>
 </div>
@@ -459,7 +471,7 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 <div class="paragraph">
 <p>The key question to answer is what triggers dependency resolution? The most common cause is the evaluation of the files that make up a configuration. This is normally a job for tasks, since you typically don’t need the files until you’re ready to do something with them in a task action. However, imagine you’re doing some debugging and want to display the files that make up a configuration. One way you can do this is by injecting a print statement:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
 <pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">task copyFiles(type: Copy) {
@@ -469,10 +481,20 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 }</code></pre>
 </div>
 </div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.create&lt;Copy&gt;("copyFiles") {
+    println("&gt;&gt; Compilation deps: ${configurations.compile.files}")
+    into("$buildDir/output")
+    from(configurations.compile)
+}</code></pre>
+</div>
+</div>
 <div class="paragraph">
 <p>The <code>files</code> property will force Gradle to resolve the dependencies, and in this example that’s happening during the configuration phase. Now every time you run the build, no matter what tasks you execute, you&#8217;ll take a performance hit from the dependency resolution on that configuration. It would be better to add this in a <code>doFirst()</code> action.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
 <pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">task copyFiles(type: Copy) {
@@ -480,6 +502,18 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
     from configurations.compile
     doFirst {
         println "&gt;&gt; Compilation deps: ${configurations.compile.files}"
+    }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.create&lt;Copy&gt;("copyFiles") {
+    into("$buildDir/output")
+    from(configurations.compile)
+    doFirst {
+        println("&gt;&gt; Compilation deps: ${configurations.compile.files}")
     }
 }</code></pre>
 </div>
@@ -756,19 +790,39 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="paragraph">
 <p>Gradle will happily run multiple test cases in parallel, which is useful when you have several CPU cores and don’t want to waste most of them. To enable this feature, just use the following configuration setting on the relevant <code>Test</code> task(s):</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test.maxParallelForks = 4</code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(Test) {
+    maxParallelForks = 4
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.withType&lt;Test&gt; {
+    maxParallelForks = 4
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>The normal approach is to use some number less than or equal to the number of CPU cores you have, such as this algorithm:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test.maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1</code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(Test) {
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.withType&lt;Test&gt; {
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it &gt; 0 } ?: 1
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -783,10 +837,20 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="paragraph">
 <p>Another option is to fork a new test VM after a certain number of tests have run. You can do this with the <code>forkEvery</code> setting:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test.forkEvery = 100</code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(Test) {
+    forkEvery = 100
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.withType&lt;Test&gt; {
+    setForkEvery(100)
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -801,12 +865,21 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="paragraph">
 <p>To disable the test reports, simply add this configuration:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test {
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(Test) {
     reports.html.enabled = false
     reports.junitXml.enabled = false
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.withType&lt;Test&gt; {
+    reports.html.isEnabled = false
+    reports.junitXml.isEnabled = false
 }</code></pre>
 </div>
 </div>
@@ -816,10 +889,20 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="paragraph">
 <p>One thing to bear in mind is that you will probably want to conditionally disable or enable the reports, otherwise you will have to edit the build file just to see them. For example, you could enable the reports based on a project property:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
-<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">test {
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(Test) {
+    if (!project.hasProperty("createReports")) {
+        reports...
+    }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.withType&lt;Test&gt; {
     if (!project.hasProperty("createReports")) {
         reports...
     }
@@ -852,19 +935,34 @@ our advice on forked compilation further down in this guide. However, some very 
 <div class="paragraph">
 <p>The Gradle Java plugin allows you to run the compiler as a separate process by using the following configuration for any <code>JavaCompile</code> task:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle</div>
 <div class="content">
-<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">&lt;taskname&gt;.options.fork = true</code></pre>
+<pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">&lt;task&gt;.options.fork = true</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">&lt;task&gt;.options.isFork = true</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>or, more commonly, to apply the configuration to <em>all</em> Java compilation tasks:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
 <div class="content">
 <pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(JavaCompile) {
     options.fork = true
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.withType&lt;JavaCompile&gt; {
+    options.isFork = true
 }</code></pre>
 </div>
 </div>
@@ -893,11 +991,21 @@ changes no longer trigger recompilation of downstream projects. This especially 
 Since Gradle 3.4, you can now clearly separate which dependencies are part of your <code>api</code> and which are only <code>implementation</code> details. Implementation dependencies
 are not leaked into the compile classpath of downstream projects, which means that they will no longer be recompiled when such an implementation detail changes.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle</div>
 <div class="content">
 <pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">dependencies {
-   api project("myUtils")
-   implementation "com.google.guava:guava:21.0"
+   api project('myUtils')
+   implementation 'com.google.guava:guava:21.0'
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">dependencies {
+   api(project("myUtils"))
+   implementation("com.google.guava:guava:21.0")
 }</code></pre>
 </div>
 </div>
@@ -912,10 +1020,19 @@ plugin. <code>api</code> dependencies can only be defined by libraries, which sh
 <p>Gradle can analyze dependencies down to the individual class level in order to recompile only the classes that were affected by a change. This option
 will soon become the default setting, but you can already use it today to significantly speed up your incremental build times:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle</div>
 <div class="content">
 <pre class="prettyprint highlight"><code class="language-groovy" data-lang="groovy">tasks.withType(JavaCompile) {
     options.incremental = true
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title">build.gradle.kts</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-kotlin" data-lang="kotlin">tasks.withType&lt;JavaCompile&gt; {
+    options.isIncremental = true
 }</code></pre>
 </div>
 </div>
@@ -989,13 +1106,13 @@ slowing down your build, don&#8217;t hesitate to send a profiler snapshot at <a 
 <div class="sect3">
 <h4 id="settings_and_em_buildsrc_em"><a class="anchor" href="#settings_and_em_buildsrc_em"></a><a class="link" href="#settings_and_em_buildsrc_em">Settings and <em>buildSrc</em></a></h4>
 <div class="paragraph">
-<p>Soon after Gradle has got itself up and running, it initializes your project. This commonly just means processing your <em>settings.gradle</em> file, but if you have custom build logic in a <em>buildSrc</em> directory, that gets built as well.</p>
+<p>Soon after Gradle has got itself up and running, it initializes your project. This commonly just means processing your settings file, but if you have custom build logic in a <em>buildSrc</em> directory, that gets built as well.</p>
 </div>
 <div class="paragraph">
 <p>The sample profile report shows a time over 1.6 second for this category, the vast majority of which was spent building the <em>buildSrc</em> project. This part fortunately won’t take so long once <em>buildSrc</em> is built once, as Gradle will consider it up to date. The up-to-date checks still take a little time, but nowhere near as much. If you do have problems with a persistently time consuming <em>buildSrc</em> phase, you should consider breaking it out into a separate project whose JAR artifact is added to the build&#8217;s classpath.</p>
 </div>
 <div class="paragraph">
-<p>The <em>settings.gradle</em> file rarely has computationally or IO expensive code in it. If you find that Gradle is taking a significant amount of time to process it, you should use more traditional profiling methods, such as <a href="https://github.com/gradle/gradle-profiler">the Gradle Profiler</a> to determine why.</p>
+<p>The settings file rarely has computationally or IO expensive code in it. If you find that Gradle is taking a significant amount of time to process it, you should use more traditional profiling methods, such as <a href="https://github.com/gradle/gradle-profiler">the Gradle Profiler</a> to determine why.</p>
 </div>
 </div>
 <div class="sect3">
