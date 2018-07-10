@@ -288,27 +288,6 @@ Parallel builds require projects to be decoupled at execution time, i.e. tasks i
 </div>
 <div class="title">Figure 3. Optimized parallel execution</div>
 </div>
-</div>
-<div class="sect2">
-<h3 id="configure_on_demand"><a class="anchor" href="#configure_on_demand"></a><a class="link" href="#configure_on_demand">Configure on demand</a></h3>
-<div class="paragraph">
-<p>Imagine you have 300 subprojects all managed by a single Gradle build. Even if the configuration time for each project is just 50ms, that means every build will take at least 15s! That’s why it’s particularly crucial to keep a close eye on configuration times for projects that have a lot of modules.</p>
-</div>
-<div class="paragraph">
-<p>With that in mind, wouldn’t it be better if Gradle only configured the projects that were actually required to execute the requested task(s)? Of course, and that’s where the <code>--configure-on-demand</code> command line option comes in. It avoids a lot of unnecessary configuration at the cost of working out which projects are required. While not necessarily recommended if you only have a small number of quick-to-configure subprojects, it can be worth a try in larger builds.</p>
-</div>
-<div class="paragraph">
-<p>Configure on demand will only work reliably when you have decoupled projects. You can learn more about <a href="https://docs.gradle.org/current/userguide/multi_project_builds.html#sec:decoupled_projects">decoupled projects</a> in the User Manual. Most importantly, using <code>subprojects {}</code> or <code>allprojects {}</code> blocks will mostly negate the benefit of configure-on-demand, because those blocks are executed eagerly.</p>
-</div>
-<div class="paragraph">
-<p>You can make configure on demand the default for a project by adding the following setting to its <em>gradle.properties</em> file:</p>
-</div>
-<div class="listingblock">
-<div class="title">gradle.properties</div>
-<div class="content">
-<pre class="prettyprint highlight"><code class="language-java" data-lang="java">org.gradle.configureondemand=true</code></pre>
-</div>
-</div>
 <div class="paragraph">
 <p>That’s the end of the quick wins. From here on out, improving your build performance will require some elbow grease. First, perhaps the most important step: finding out which bits of your build are slow and why.</p>
 </div>
