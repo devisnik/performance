@@ -671,31 +671,6 @@ If your build logic is comprised of plugins written in statically compiled JVM l
 <p>Subsequently sorting by task duration on the Timeline screen will highlight tasks with great potential for time saving. The build scan above shows that <code>:task1</code> and <code>:task3</code> could be improved and made cacheable, and clearly states the reason why they were considered not cacheable.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="partial_builds"><a class="anchor" href="#partial_builds"></a><a class="link" href="#partial_builds">Partial builds</a></h3>
-<div class="paragraph">
-<p>Incremental build definitely improves build times, but you need to remember that the up-to-date checks still take time. This has important implications for multi-project builds that have a large number of subprojects. If the task you want to execute ultimately depends on the execution of twenty other subprojects, you have to wait until the build has finished checking those before it gets round to your task. Some of them may even have non-incremental tasks that end up running, even if nothing has changed.</p>
-</div>
-<div class="paragraph">
-<p>Gradle offers a nice shortcut if you know that a task&#8217;s project dependencies haven&#8217;t changed: use the <code>-a</code> command line option. This forces Gradle to effectively ignore all the dependent projects and only execute the required tasks that are defined in the target project. Project dependencies will still be included on the appropriate classpaths, so the project will build as before. Just be sure there haven&#8217;t been any changes to the projects the target depends on!</p>
-</div>
-<div class="paragraph">
-<p>Gradle also supports other forms of partial build via the <em>base</em> plugin, which adds the following tasks:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>buildNeeded</code> - will execute the <code>build</code> task in the target project and all those projects it depends on. This verifies that the projects you depend on are working correctly. If that&#8217;s not the case, they may break the target project&#8217;s tests or some other part of the build.</p>
-</li>
-<li>
-<p><code>buildDependents</code> - will execute the <code>build</code> task in the target project and all projects that depend on it. This checks that you haven&#8217;t broken those projects after making some changes.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>These tasks are slower than just running <code>build</code> in the target project as they do more work, but they are an effective alternative to running <code>gradle build</code>, which runs <code>build</code> in <em>all</em> the projects of a multi-project build.</p>
-</div>
-</div>
 </div>
 </div>
 <div class="sect1">
