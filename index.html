@@ -971,8 +971,7 @@ plugin. <code>api</code> dependencies can only be defined by libraries, which sh
 <div class="sect2">
 <h3 id="incremental_compilation"><a class="anchor" href="#incremental_compilation"></a><a class="link" href="#incremental_compilation">Incremental compilation</a></h3>
 <div class="paragraph">
-<p>Gradle can analyze dependencies down to the individual class level in order to recompile only the classes that were affected by a change. This option
-will soon become the default setting, but you can already use it today to significantly speed up your incremental build times:</p>
+<p>Gradle can analyze dependencies down to the individual class level in order to recompile only the classes that were affected by a change. Incremental compilation is the default since Gradle 4.10. On older versions you can activate it like this:</p>
 </div>
 <div class="listingblock multi-language-sample">
 <div class="title">build.gradle</div>
